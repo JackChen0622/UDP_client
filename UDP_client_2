@@ -1,0 +1,63 @@
+'''
+Created on 2018/12/03
+
+@author: Chen
+'''
+
+import socket
+from datetime import datetime
+import csv
+import threading
+import sys
+import time
+import os
+
+times = sys.argv[1]
+times = int(times)
+
+open('result.csv','w').close()
+#os.remove('result.csv')
+csv_file = 'result.csv'
+#csv_file.truncate()
+
+#with open(csv_file, 'wb') as csvfile:
+    #writer = csv.writer(csvfile)
+def loop():
+    UDP_IP = "10.2.1.4"
+    UDP_PORT = 9999
+    MESSAGE = "[0x16,0x01,0x12,0x03,0x1b,0x14,0x30,0x23,0x8000,0x03E8,0x0000,0x0000]"
+    print "UDP target IP:", UDP_IP
+    print "UDP target port:", UDP_PORT
+    print "message:", MESSAGE
+    print "\n"
+    s = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+    #for i in range(1000):
+    timereq = datetime.now()
+    timereq2 = datetime.strftime(timereq, '%Y-%m-%d,%H:%M:%S.%f')
+    timereq3 = time.time()
+    print "send time : "+timereq2
+    print "\n"
+    s.sendto(MESSAGE, (UDP_IP, UDP_PORT))
+    #time.sleep(1)
+    res = s.recvfrom(4096)
+    timeres = datetime.now()
+    timeres2 = datetime.strftime(timeres, '%Y-%m-%d,%H:%M:%S.%f')
+    timeres3 = time.time()
+    print res
+    print "\n"
+    print "receive time : "+timeres2
+    cost = timeres3 - timereq3
+    cost = "%.3f" % cost
+    with open(csv_file, 'a') as csvfile:
+
+        writer = csv.writer(csvfile)
+        writer.writerow([timereq2, timeres2, cost])
+
+
+threads = []
+for i in range(times):
+    t = threading.Thread(target=loop)
+    threads.append(t)
+    t.start()
+
+
