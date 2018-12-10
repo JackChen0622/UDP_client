@@ -1,0 +1,84 @@
+'''
+Created on 2018/12/03
+
+@author: Chen
+'''
+
+import socket
+from datetime import datetime
+import csv
+import threading
+import sys
+import os
+
+times = sys.argv[1]
+times = int(times)
+#with open(csv_file, 'wb') as csvfile:
+    #writer = csv.writer(csvfile)
+def loop():
+    csv_file = 'output_' + str(datetime.now().strftime('%Y%m%d_%H%M%S.%f')) + '.csv'
+    UDP_IP = "127.0.0.1"
+    UDP_PORT = 9999
+    MESSAGE = "[0x16,0x01,0x12,0x03,0x1b,0x14,0x30,0x23,0x8000,0x03E8,0x0000,0x0000]"
+    print "UDP target IP:", UDP_IP
+    print "UDP target port:", UDP_PORT
+    print "message:", MESSAGE
+    print "\n"
+    s = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+    #for i in range(1000):
+    timereq = datetime.now()
+    timereq2 = datetime.strftime(timereq, '%Y-%m-%d, %H:%M:%S.%f')
+    print "send time : "+timereq2
+    print "\n"
+    s.sendto(MESSAGE, (UDP_IP, UDP_PORT))
+    #time.sleep(1)
+    res = s.recvfrom(4096)
+    timeres = datetime.now()
+    timeres2 = datetime.strftime(timeres, '%Y-%m-%d, %H:%M:%S.%f')
+    print res
+    print "\n"
+    print "receive time : "+timeres2
+    cost = (timeres - timereq).microseconds / 1000
+    with open(csv_file, 'w') as csvfile:
+
+        writer = csv.writer(csvfile)
+        writer.writerow([timereq2, timeres2, cost])
+
+threads = []
+for i in range(times):
+    t = threading.Thread(target=loop)
+    threads.append(t)
+    t.start()
+
+for x in threads:
+    x.join()
+#time.sleep(3)
+csv_header = 'send,receive,time(ms)'
+csv_out = 'consolidated_' + str(datetime.now().strftime('%Y%m%d_%H%M%S')) + '.csv'
+
+csv_dir = os.getcwd()
+
+dir_tree = os.walk(csv_dir)
+for dirpath, dirnames, filenames in dir_tree:
+    pass
+
+csv_list = []
+for file in filenames:
+    if file.endswith('.csv'):
+        csv_list.append(file)
+
+csv_merge = open(csv_out, 'w')
+csv_merge.write(csv_header)
+csv_merge.write('\n')
+
+for file in csv_list:
+    csv_in = open(file)
+    for line in csv_in:
+        if line.startswith(csv_header):
+            continue
+        csv_merge.write(line)
+    csv_in.close()
+    os.remove(file)
+csv_merge.close()
+
+print('Verify consolidated CSV file : ' + csv_out)
